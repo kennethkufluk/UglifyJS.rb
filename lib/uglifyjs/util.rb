@@ -36,6 +36,7 @@ module Util
   end
 
   def MAP(a, f)
+    # call function f on each of array a
     ret = []
     for i in (0...a.length)
       val = f.call(a[i], i)
@@ -49,6 +50,9 @@ module Util
   end
 
   class AtTop
+
+    attr_accessor :v
+
     def initialize(val)
       @v = val
     end

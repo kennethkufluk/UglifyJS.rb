@@ -506,8 +506,11 @@ function ast_mangle(ast, options) {
                 if (extra) for (var i in extra) if (HOP(extra, i)) {
                         s.set_mangle(i, extra[i]);
                 }
-                for (var i in s.names) if (HOP(s.names, i)) {
+                for (var i in s.names) {
+                    console.log(i)
+                    if (HOP(s.names, i)) {
                         get_mangled(i, true);
+                    }
                 }
                 var ret = cont();
                 ret.scope = s;

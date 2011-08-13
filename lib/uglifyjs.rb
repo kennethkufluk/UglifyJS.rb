@@ -28,9 +28,9 @@ require 'parsejs'
 
 # require 'uglifyjs/ast_walker'
 # require 'uglifyjs/scope'
-# require 'uglifyjs/ast_mangle'
 # require 'uglifyjs/ast_squeeze'
 require 'uglifyjs/util'
+require 'uglifyjs/ast_mangle'
 require 'uglifyjs/gen_code'
 
 module Uglifyjs
@@ -46,16 +46,18 @@ module Uglifyjs
 
     def initialize(ast)
       @ast = ast
-      gen_code
     end
 
     def mangle
+      @ast = Mangle.new(@ast).go
     end
 
     def squeeze
     end
 
     def gen_code
+      mangle
+      puts @ast.inspect
       GenCode::Generator.new(@ast).go
     end
 

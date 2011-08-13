@@ -1,3 +1,4 @@
+var a=1;
 (function hello() {
   'hello';
   "ku\npk";

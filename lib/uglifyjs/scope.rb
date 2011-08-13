@@ -4,7 +4,22 @@ module Scope
 
   class Scope
 
-    def initialize(parent)
+    include Util
+
+    DIGITS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
+
+    attr_accessor :names
+    attr_accessor :mangled
+    attr_accessor :rev_mangled
+    attr_accessor :body
+    attr_accessor :refs
+    attr_accessor :uses_with
+    attr_accessor :uses_eval
+    attr_accessor :parent
+    attr_accessor :children
+    attr_accessor :level
+
+    def initialize(parent=nil)
       @names = {}  # names defined in this scope
       @mangled = {}      # mangled names (orig.name => mangled)
       @rev_mangled = {}  # reverse lookup (mangled => orig.name)
@@ -16,31 +31,33 @@ module Scope
       @children = []     # sub-scopes
       if parent
         @level = parent.level + 1
-        parent.children.push(this) #kpk fix this
+        @parent.children.push(self)
       else
         @level = 0
       end
     end
 
     def has(name)
-      for (var s = this; s; s = s.parent)
+      s = self
+      begin
         if HOP(s.names, name)
           return s
         end
-      end
+      end while (s = s.parent)
     end
     def has_mangled(mname)
-      for (var s = this; s; s = s.parent)
+      s = self
+      begin
         if (HOP(s.rev_mangled, mname))
           return s
         end
-      end
+      end while s = s.parent
     end
     def toJSON
       return {
-        :names => this.names,
-        :uses_eval => this.uses_eval,
-        :uses_with => this.uses_with
+        :names => @names,
+        :uses_eval => @uses_eval,
+        :uses_with => @uses_with
       }
     end
 
@@ -59,23 +76,23 @@ module Scope
       #
       # 3. doesn't shadow a name that is referenced but not
       #    defined (possibly global defined elsewhere).
-      for (;;) {
-        m = base54(++this.cname)
+      begin
+        m = base54(@cname+=1)
 
         # # case 1.
-        prior = this.has_mangled(m)
-        if (prior && this.refs[prior.rev_mangled[m]] === prior)
+        prior = has_mangled(m)
+        if (prior && @refs[prior.rev_mangled[m]] === prior)
           continue
         end
 
         # # case 2.
-        prior = this.has(m)
-        if (prior && prior !== this && this.refs[m] === prior && !prior.has_mangled(m))
+        prior = has(m)
+        if (prior && prior != self && @refs[m] === prior && !prior.has_mangled(m))
           continue
         end
 
         # # case 3.
-        if (HOP(this.refs, m) && this.refs[m] == null)
+        if (HOP(@refs, m) && @refs[m].nil?)
           continue
         end
 
@@ -85,84 +102,102 @@ module Scope
         end
 
         return m
-      end
+      end while true
     end
     def set_mangle(name, m)
-      this.rev_mangled[m] = name
-      return this.mangled[name] = m
+      @rev_mangled[m] = name
+      return @mangled[name] = m
     end
     def get_mangled(name, newMangle)
-      return name if (this.uses_eval || this.uses_with) # no mangle if eval or with is in use
-      s = this.has(name)
+      return name if (@uses_eval || @uses_with) # no mangle if eval or with is in use
+      s = has(name)
       return name if (!s) ## not in visible scope, no mangle
       return s.mangled[name] if HOP(s.mangled, name)  # already mangled in this scope
-      if (!newMangle) return name          # not found and no mangling requested
+      return name if (!newMangle)           # not found and no mangling requested
       return s.set_mangle(name, s.next_mangled())
     end
-    def define(name)
-      if name != null
-        return this.names[name] = name
+    def define(name=nil)
+      if !name.nil?
+        return @names[name] = name
       end
     end
 
     protected
 
-    DIGITS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
-    def base54
-      lambda do |num|
-        ret = ""
-        begin
-          ret = DIGITS[num % 54] + ret
-          num = Math.floor(num / 54)
-        end while (num > 0)
-        return ret
-      end
+    def base54(num)
+      ret = ""
+      begin
+        ret = DIGITS[num % 54].chr + ret
+        num = (num / 54).floor
+      end while (num > 0)
+      return ret
     end
 
 
   end
 
-  class ast_add_scope
+  class ScopedArray < Array
+
+    attr_accessor :scope
+    
+  end
+
+  class AddScope
+
+    include Util
 
     def initialize(ast)
-      @current_scope = null
-      @w = ast_walker()
-      @walk = w.walk
+      @current_scope = nil
+      @w = ASTWalker.new(ast)
+      @walk = @w.walk
+      @ast = ast
       @having_eval = []
     end
 
-    def with_scope
+    def go
       return with_new_scope(lambda do
         # process AST
-        var ret = w.with_walkers({
-          "function": _lambda,
-          "defun": _lambda,
-          "with": function(expr, block) {
-            for (var s = current_scope; s; s = s.parent)
-              s.uses_with = true;
-          },
-          "var": function(defs) {
-            MAP(defs, function(d){ define(d[0]) });
-          },
-          "const": function(defs) {
-            MAP(defs, function(d){ define(d[0]) });
-          },
-          "try": function(t, c, f) {
-            if (c != null) return [
-              this[0],
-              MAP(t, walk),
-              [ define(c[0]), MAP(c[1], walk) ],
-              f != null ? MAP(f, walk) : null
-            ];
-          },
-          "name": function(name) {
+        ret = @w.with_walkers({
+          "function" => _lambda,
+          "defun" => _lambda,
+          "with" => lambda do |ast, expr, block|
+            s = @current_scope
+            begin
+              s.uses_with = true
+            end while s = @current_scope
+            nil
+          end,
+          "var" => lambda do |ast, defs, *args|
+            MAP(defs, lambda { |d, *args| define.call(d[0]) })
+            nil
+          end,
+          "const" => lambda do |ast, defs|
+            MAP(defs, lambda { |d| define.call(d[0]) })
+            nil
+          end,
+          "try" => lambda do |ast, t, c, f|
+            if !c.nil?
+              return [
+                ast[0],
+                MAP(t, @walk),
+                [ define.call(c[0]), MAP(c[1], @walk) ],
+                f != null ? MAP(f, @walk) : null
+              ]
+            end
+            nil
+          end,
+          "name" => lambda do |ast, name|
             if (name == "eval")
-              having_eval.push(current_scope);
-            reference(name);
-          }
-        }, function(){
-          return walk(ast);
-        });
+              puts "eval"+@current_scope.class.to_s
+              @having_eval.push(@current_scope)
+            end
+            reference(name)
+            nil
+          end
+        }, lambda do
+          #puts "Walking this ast: #{@ast.inspect}"
+          return @walk.call(@ast)
+        end)
 
         # the reason why we need an additional pass here is
         # that names can be used prior to their definition.
@@ -170,16 +205,20 @@ module Scope
         # scopes where eval was detected and their parents
         # are marked with uses_eval, unless they define the
         # "eval" name.
-        MAP(having_eval, function(scope){
-          if (!scope.has("eval")) while (scope) {
-            scope.uses_eval = true;
-            scope = scope.parent;
-          }
-        });
+        puts "having #{@having_eval.inspect} "
+        MAP(@having_eval, lambda do |scope, *args|
+          if (!(scope.has("eval")))
+            while (scope)
+              scope.uses_eval = true
+              scope = scope.parent
+            end
+          end
+        end)
 
-        fixrefs(current_scope);
+        #puts "running fixrefs for current scope: #{@current_scope.children.length}"
+        fixrefs(@current_scope)
 
-        return ret;
+        return ret
       end)
     end
 
@@ -188,42 +227,59 @@ module Scope
     # for referenced names it might be useful to know
     # their origin scope.  current_scope here is the
     # toplevel one.
-    def fixrefs(scope, i) {
+    def fixrefs(scope)
       # # do children first; order shouldn't matter
-      for (i = scope.children.length; --i >= 0;)
-        fixrefs(scope.children[i]);
-      for (i in scope.refs) if (HOP(scope.refs, i)) {
-        # find origin scope and propagate the reference to origin
-        for (var origin = scope.has(i), s = scope; s; s = s.parent) {
-          s.refs[i] = origin;
-          if (s === origin) break;
-        }
-      }
+      scope.children.reverse.each do |child|
+        fixrefs(child)
+      end
+      for i,j in scope.refs
+        if (HOP(scope.refs, i))
+          # find origin scope and propagate the reference to origin
+          origin = scope.has(i)
+          s = scope
+          begin
+            s.refs[i] = origin
+            break if (s === origin)
+          end while s = s.parent
+        end
+      end
     end
 
-    def with_new_scope(cont) {
-      current_scope = new Scope(current_scope);
-      var ret = current_scope.body = cont();
-      ret.scope = current_scope;
-      current_scope = current_scope.parent;
-      return ret;
+    def with_new_scope(cont)
+      @current_scope = Scope.new(@current_scope)
+      #puts "Scope: #{@current_scope}"
+      ret = @current_scope.body = cont.call()
+      #puts "is ret an array? #{ret.class}  #{ret.inspect}"
+      ret = ScopedArray.new(ret)
+      #puts "is ret an array? #{ret.class}  #{ret.inspect}"
+      ret.scope = @current_scope
+      #puts "is ret an array? #{ret.class}  #{ret.inspect}"
+      @current_scope = @current_scope.parent
+      return ret
     end
 
-    def define(name) {
-      return current_scope.define(name);
+    def define
+      lambda do |name, *args|
+        return @current_scope.define(name)
+      end
     end
 
-    def reference(name) {
-      current_scope.refs[name] = true;
+    def reference(name)
+      @current_scope.refs[name] = true
     end
 
-    def _lambda(name, args, body) {
-      var is_defun = this[0] == "defun";
-      return [ this[0], is_defun ? define(name) : name, args, with_new_scope(function(){
-        if (!is_defun) define(name);
-        MAP(args, define);
-        return MAP(body, walk);
-      })];
+    def _lambda
+      lambda do |ast, name, args, *body|
+        body = body[0]
+        is_defun = ast[0] == "defun"
+        return [ ast[0], is_defun ? define.call(name) : name, args, with_new_scope(lambda do
+          if (!is_defun)
+            define.call(name)
+          end
+          MAP(args, define)
+          return MAP(body, @walk)
+        end)]
+      end
     end
 
   end

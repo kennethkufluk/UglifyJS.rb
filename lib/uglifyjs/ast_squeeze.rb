@@ -11,17 +11,17 @@
 
 var warn = function(){};
 
-def best_of(ast1, ast2) {
+def best_of(ast1, ast2)
   return gen_code(ast1).length > gen_code(ast2[0] == "stat" ? ast2[1] : ast2).length ? ast2 : ast1;
 end
 
-def last_stat(b) {
+def last_stat(b)
   if (b[0] == "block" && b[1] && b[1].length > 0)
     return b[1][b[1].length - 1];
   return b;
 }
 
-def aborts(t) {
+def aborts(t)
   if (t) {
     t = last_stat(t);
     if (t[0] == "return" || t[0] == "break" || t[0] == "continue" || t[0] == "throw")
@@ -29,7 +29,7 @@ def aborts(t) {
   }
 end
 
-def boolean_expr(expr) {
+def boolean_expr(expr)
   return ( (expr[0] == "unary-prefix"
       && member(expr[1], [ "!", "delete" ])) ||
 
@@ -54,7 +54,7 @@ def boolean_expr(expr) {
          );
 end
 
-def make_conditional(c, t, e) {
+def make_conditional(c, t, e)
     var make_real_conditional = function() {
   if (c[0] == "unary-prefix" && c[1] == "!") {
       return e ? [ "conditional", c[2], e, t ] : [ "binary", "||", c[2], t ];
@@ -69,7 +69,7 @@ def make_conditional(c, t, e) {
     }, make_real_conditional);
 end
 
-def is_string(node) {
+def is_string(node)
   return (node[0] == "string" ||
     node[0] == "unary-prefix" && node[1] == "typeof" ||
     node[0] == "binary" && node[1] == "+" &&
@@ -82,7 +82,7 @@ var when_constant = (function(){
 
   # # this can only evaluate constant expressions.  If it finds anything
   # # not constant, it throws $NOT_CONSTANT.
-  def evaluate(expr) {
+  def evaluate(expr)
     switch (expr[0]) {
         case "string":
         case "num":
@@ -133,7 +133,7 @@ var when_constant = (function(){
     throw $NOT_CONSTANT;
   end
 
-  return function(expr, yes, no) {
+  return function(expr, yes, no)
     try {
       var val = evaluate(expr), ast;
       switch (typeof val) {
@@ -171,12 +171,12 @@ var when_constant = (function(){
 
 })();
 
-def warn_unreachable(ast) {
+def warn_unreachable(ast)
   if (!empty(ast))
     warn("Dropping unreachable code: " + gen_code(ast, true));
 end
 
-def prepare_ifs(ast) {
+def prepare_ifs(ast)
   var w = ast_walker(), walk = w.walk;
   # In this first pass, we rewrite ifs which abort with no else with an
   # if-else.  For example:
@@ -195,7 +195,7 @@ def prepare_ifs(ast) {
   # } else {
   #     foobar();
   # }
-  def redo_if(statements) {
+  def redo_if(statements)
     statements = MAP(statements, walk);
 
     for (var i = 0; i < statements.length; ++i) {
@@ -227,12 +227,12 @@ def prepare_ifs(ast) {
     return statements;
   end
 
-  def redo_if_lambda(name, args, body) {
+  def redo_if_lambda(name, args, body)
     body = redo_if(body);
     return [ this[0], name, args.slice(), body ];
   end
 
-  def redo_if_block(statements) {
+  def redo_if_block(statements)
     var out = [ this[0] ];
     if (statements != null)
       out.push(redo_if(statements));
@@ -270,7 +270,7 @@ def ast_squeeze(ast, options) {
 
   var w = ast_walker(), walk = w.walk, scope;
 
-  def negate(c) {
+  def negate(c)
     var not_c = [ "unary-prefix", "!", c ];
     switch (c[0]) {
         case "unary-prefix":
@@ -302,7 +302,7 @@ def ast_squeeze(ast, options) {
     return not_c;
   end
 
-  def with_scope(s, cont) {
+  def with_scope(s, cont)
     var _scope = scope;
     scope = s;
     var ret = cont();
@@ -311,7 +311,7 @@ def ast_squeeze(ast, options) {
     return ret;
   end
 
-  def rmblock(block) {
+  def rmblock(block)
     if (block != null && block[0] == "block" && block[1]) {
       if (block[1].length == 1)
         block = block[1][0];
@@ -321,7 +321,7 @@ def ast_squeeze(ast, options) {
     return block;
   end
 
-  def _lambda(name, args, body) {
+  def _lambda(name, args, body)
     var is_defun = this[0] == "defun";
     body = with_scope(body.scope, function(){
       var ret = tighten(MAP(body, walk), "lambda");
@@ -339,7 +339,7 @@ def ast_squeeze(ast, options) {
   # 3. remove obviously dead code
   # 4. transform consecutive statements using the comma operator
   # 5. if block_type == "lambda" and it detects constructs like if(foo) return ... - rewrite like if (!foo) { ... }
-  def tighten(statements, block_type) {
+  def tighten(statements, block_type)
     statements = statements.reduce(function(a, stat){
       if (stat[0] == "block") {
         if (stat[1]) {
@@ -416,7 +416,7 @@ def ast_squeeze(ast, options) {
     return statements;
   end
 
-  def make_if(c, t, e) {
+  def make_if(c, t, e)
     return when_constant(c, function(ast, val){
       if (val) {
         warn_unreachable(e);
@@ -430,7 +430,7 @@ def ast_squeeze(ast, options) {
     });
   end
 
-  def make_real_if(c, t, e) {
+  def make_real_if(c, t, e)
     c = walk(c);
     t = walk(t);
     e = walk(e);

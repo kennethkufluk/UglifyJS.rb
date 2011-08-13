@@ -1,102 +1,139 @@
 
 # /* -----[ mangle names ]----- */
 
-def ast_mangle(ast, options) {
-  var w = ast_walker(), walk = w.walk, scope;
-  options = options || {};
+require "uglifyjs/ast_walker"
+require "uglifyjs/scope"
 
-  def get_mangled(name, newMangle) {
-    if (!options.toplevel && !scope.parent) return name; ## don't mangle toplevel
-    if (options.except && member(name, options.except))
-      return name;
-    return scope.get_mangled(name, newMangle);
+class Mangle
+
+  include Scope
+  include Util
+
+  def initialize(ast, options=nil)
+    @w = ASTWalker.new(ast)
+    @walk = @w.walk
+    @ast = ast
+    @options = options || {}
+    @scope = nil
   end
 
-  def get_define(name) {
-    if (options.defines) {
+  def go
+    return @w.with_walkers({
+      "function" => _lambda,
+      "defun" => lambda do |ast, *args|
+        # move def declarations to the top when
+        # they are not in some block.
+        ast = _lambda.call(args)
+        case @w.parent()[0]
+          when "toplevel" || "function" || "defun"
+            return AtTop.new(ast)
+        end
+        return ast
+      end,
+      "var" => _vardefs,
+      "const" => _vardefs,
+      "name" => lambda do |ast, name|
+        return get_define(name) || [ ast[0], get_mangled(name) ]
+      end,
+      "try" => lambda do |ast, t, c, f|
+        return [ ast[0],
+           MAP(t, @walk),
+           !c.nil? ? [ get_mangled(c[0]), MAP(c[1], @walk) ] : nil,
+           !f.nil? ? MAP(f, @walk) : nil ]
+      end,
+      "toplevel" => lambda do |ast, body|
+        return with_scope(ast.scope, lambda do
+          return [ ast[0], MAP(body, @walk) ]
+        end)
+      end
+    }, lambda do
+      ast_with_scope = AddScope.new(@ast).go
+      return @walk.call(ast_with_scope)
+    end)
+  end
+
+  def get_mangled(name, newMangle=nil)
+    if (!@options[:toplevel] && !@scope.parent)
+      return name ## don't mangle toplevel
+    end
+    if @options[:except] && member(name, @options[:except])
+      return name
+    end
+    return @scope.get_mangled(name, newMangle)
+  end
+
+  def get_define(name)
+    if @options[:defines]
       # we always lookup a defined symbol for the current scope FIRST, so declared
       # vars trump a DEFINE symbol, but if no such var is found, then match a DEFINE value
-      if (!scope.has(name)) {
-        if (HOP(options.defines, name)) {
-          return options.defines[name];
-        }
-      }
-      return null;
-    }
+      if !@scope.has(name)
+        if HOP(@options[:defines], name)
+          return @options[:defines][name]
+        end
+      end
+      return nil
+    end
   end
 
-  def _lambda(name, args, body) {
-    var is_defun = this[0] == "defun", extra;
-    if (name) {
-      if (is_defun) name = get_mangled(name);
-      else {
-        extra = {};
-        if (!(scope.uses_eval || scope.uses_with))
-          name = extra[name] = scope.next_mangled();
+  def _lambda
+    lambda do |ast, *others|
+      is_defun = ast[0] == "defun"
+      name = others[0] || nil
+      args = others[1] || nil
+      body = others[2] || nil
+      if !name.nil?
+        if is_defun
+          name = get_mangled(name)
         else
-          extra[name] = name;
-      }
-    }
-    body = with_scope(body.scope, function(){
-      args = MAP(args, function(name){ return get_mangled(name) });
-      return MAP(body, walk);
-    }, extra);
-    return [ this[0], name, args, body ];
+          extra = {}
+          if !(@scope.uses_eval || @scope.uses_with)
+            name = extra[name] = @scope.next_mangled()
+          else
+            extra[name] = name
+          end
+        end
+      end
+      if !body.nil?
+        body = with_scope(body.scope, lambda do
+          args = MAP(args, lambda { |name, *args| return get_mangled(name) })
+          return MAP(body, @walk)
+        end, extra)
+      end
+      return [ ast[0], name, args, body ]
+    end
   end
 
-  def with_scope(s, cont, extra) {
-    var _scope = scope;
-    scope = s;
-    if (extra) for (var i in extra) if (HOP(extra, i)) {
-      s.set_mangle(i, extra[i]);
-    }
-    for (var i in s.names) if (HOP(s.names, i)) {
-      get_mangled(i, true);
-    }
-    var ret = cont();
-    ret.scope = s;
-    scope = _scope;
-    return ret;
+  def with_scope(s, cont, extra=nil)
+    _scope = @scope
+    @scope = s
+    if extra
+      for i,j in extra
+        if HOP(extra, i)
+          s.set_mangle(i, extra[i])
+        end
+      end
+    end
+    for i,j in s.names
+      puts j
+      if HOP(s.names, i)
+        get_mangled(i, true)
+      end
+    end
+    ret = ScopedArray.new(cont.call())
+    ret.scope = s
+    @scope = _scope
+    return ret
   end
 
-  def _vardefs(defs) {
-    return [ this[0], MAP(defs, function(d){
-      return [ get_mangled(d[0]), walk(d[1]) ];
-    }) ];
+  def _vardefs
+    lambda do |ast, defs|
+      bob = [ ast[0], MAP(defs, lambda do |d, *args|
+        return [ get_mangled(d[0]), @walk.call(d[1]) ]
+      end) ]
+      return [ ast[0], MAP(defs, lambda do |d, *args|
+        return [ get_mangled(d[0]), @walk.call(d[1]) ]
+      end) ]
+    end
   end
 
-  return w.with_walkers({
-    "function": _lambda,
-    "defun": function() {
-      # move def declarations to the top when
-      # they are not in some block.
-      var ast = _lambda.apply(this, arguments);
-      switch (w.parent()[0]) {
-          case "toplevel":
-          case "function":
-          case "defun":
-        return AtTop.new(ast)
-      }
-      return ast;
-    },
-    "var": _vardefs,
-    "const": _vardefs,
-    "name": function(name) {
-      return get_define(name) || [ this[0], get_mangled(name) ];
-    },
-    "try": function(t, c, f) {
-      return [ this[0],
-         MAP(t, walk),
-         c != null ? [ get_mangled(c[0]), MAP(c[1], walk) ] : null,
-         f != null ? MAP(f, walk) : null ];
-    },
-    "toplevel": function(body) {
-      var self = this;
-      return with_scope(self.scope, function(){
-        return [ self[0], MAP(body, walk) ];
-      });
-    }
-  }, function() {
-    return walk(ast_add_scope(ast));
-  });
 end
