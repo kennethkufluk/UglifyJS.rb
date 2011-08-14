@@ -22,14 +22,14 @@ class ASTWalker
         type = ast[0]
         gen = @user[type]
         if gen
-          puts "USER MATCH #{type}, #{ast.class}"
+          # puts "USER MATCH #{type}, #{ast.inspect}"
           ret = gen.call(ast, *(ast.slice(1..-1)))
           if ret != nil
             return ret
           end
         end
         gen = walkers[type]
-        puts "WALKER MATCH: #{ast.inspect}, #{type}"
+        # puts "WALKER MATCH: #{type}, #{ast.inspect}"
         return gen.call(ast, *(ast.slice(1..-1)))
       ensure
         @stack.pop()
@@ -113,8 +113,8 @@ class ASTWalker
         return [
           ast[0],
           MAP(t, walk),
-          c != null ? [ c[0], MAP(c[1], walk) ]  : null,
-          f != null ? MAP(f, walk)  : null
+          c ? [ c[0], MAP(c[1], walk) ]  : nil,
+          f ? MAP(f, walk)  : nil
         ];
       end,
       "throw" => lambda do |ast, expr|
@@ -125,7 +125,7 @@ class ASTWalker
       end,
       "switch" => lambda do |ast, expr, body|
         return [ ast[0], walk.call(expr), MAP(body, lambda do |branch, *args|
-          return [ branch[0] ? walk.call(branch[0])  : null,
+          return [ branch[0] ? walk.call(branch[0])  : nil,
              MAP(branch[1], walk) ]
         end) ]
       end,

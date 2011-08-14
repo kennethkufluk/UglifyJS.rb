@@ -23,9 +23,9 @@ class Mangle
       "defun" => lambda do |ast, *args|
         # move def declarations to the top when
         # they are not in some block.
-        ast = _lambda.call(args)
+        ast = _lambda.call(ast, *args)
         case @w.parent()[0]
-          when "toplevel" || "function" || "defun"
+          when "toplevel", "function", "defun"
             return AtTop.new(ast)
         end
         return ast
@@ -81,7 +81,7 @@ class Mangle
       name = others[0] || nil
       args = others[1] || nil
       body = others[2] || nil
-      if !name.nil?
+      if name
         if is_defun
           name = get_mangled(name)
         else
@@ -95,7 +95,9 @@ class Mangle
       end
       if !body.nil?
         body = with_scope(body.scope, lambda do
-          args = MAP(args, lambda { |name, *args| return get_mangled(name) })
+          args = MAP(args, lambda do |name2, *args2|
+            return get_mangled(name2)
+          end)
           return MAP(body, @walk)
         end, extra)
       end
@@ -113,9 +115,8 @@ class Mangle
         end
       end
     end
-    for i,j in s.names
-      puts j
-      if HOP(s.names, i)
+    for i in s.names
+      if s.names.include?(i)
         get_mangled(i, true)
       end
     end
@@ -127,9 +128,6 @@ class Mangle
 
   def _vardefs
     lambda do |ast, defs|
-      bob = [ ast[0], MAP(defs, lambda do |d, *args|
-        return [ get_mangled(d[0]), @walk.call(d[1]) ]
-      end) ]
       return [ ast[0], MAP(defs, lambda do |d, *args|
         return [ get_mangled(d[0]), @walk.call(d[1]) ]
       end) ]

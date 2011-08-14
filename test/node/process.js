@@ -212,11 +212,13 @@ function ast_walker(ast) {
                         var type = ast[0];
                         var gen = user[type];
                         if (gen) {
+                           // console.log("USER MATCH: "+type+' '+JSON.stringify(ast));
                                 var ret = gen.apply(ast, ast.slice(1));
                                 if (ret != null)
                                         return ret;
                         }
                         gen = walkers[type];
+                       // console.log("WALKER MATCH: "+type+' '+JSON.stringify(ast));
                         return gen.apply(ast, ast.slice(1));
                 } finally {
                         stack.pop();
@@ -352,8 +354,9 @@ Scope.prototype = {
                 return s.set_mangle(name, s.next_mangled());
         },
         define: function(name) {
-                if (name != null)
-                        return this.names[name] = name;
+                if (name != null) {
+                  return this.names[name] = name
+                      }
         }
 };
 
@@ -381,11 +384,12 @@ function ast_add_scope(ast) {
 
         function _lambda(name, args, body) {
                 var is_defun = this[0] == "defun";
-                return [ this[0], is_defun ? define(name) : name, args, with_new_scope(function(){
+                var ret = [ this[0], is_defun ? define(name) : name, args, with_new_scope(function(){
                         if (!is_defun) define(name);
                         MAP(args, define);
                         return MAP(body, walk);
                 })];
+                return ret;
         };
 
         return with_new_scope(function(){
@@ -494,7 +498,10 @@ function ast_mangle(ast, options) {
                         }
                 }
                 body = with_scope(body.scope, function(){
-                        args = MAP(args, function(name){ return get_mangled(name) });
+
+                        args = MAP(args, function(name){
+                            return get_mangled(name)
+                        });
                         return MAP(body, walk);
                 }, extra);
                 return [ this[0], name, args, body ];
@@ -507,7 +514,6 @@ function ast_mangle(ast, options) {
                         s.set_mangle(i, extra[i]);
                 }
                 for (var i in s.names) {
-                    console.log(i)
                     if (HOP(s.names, i)) {
                         get_mangled(i, true);
                     }

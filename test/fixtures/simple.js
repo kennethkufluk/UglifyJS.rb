@@ -9,6 +9,9 @@ var a=1;
   -12;
   -0.5;
   1000000;
+  function mellow() {
+
+  }
   var nbsp = "\xA0";
   var bob = new jQuery.fn.init();
   for (var i=0;i<100;i++) {}

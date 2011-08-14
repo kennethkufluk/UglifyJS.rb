@@ -20,7 +20,7 @@ module Scope
     attr_accessor :level
 
     def initialize(parent=nil)
-      @names = {}  # names defined in this scope
+      @names = []  # names defined in this scope
       @mangled = {}      # mangled names (orig.name => mangled)
       @rev_mangled = {}  # reverse lookup (mangled => orig.name)
       @cname = -1  # current mangled name
@@ -40,7 +40,7 @@ module Scope
     def has(name)
       s = self
       begin
-        if HOP(s.names, name)
+        if s.names.include?(name)
           return s
         end
       end while (s = s.parent)
@@ -82,23 +82,23 @@ module Scope
         # # case 1.
         prior = has_mangled(m)
         if (prior && @refs[prior.rev_mangled[m]] === prior)
-          continue
+          next
         end
 
         # # case 2.
         prior = has(m)
         if (prior && prior != self && @refs[m] === prior && !prior.has_mangled(m))
-          continue
+          next
         end
 
         # # case 3.
         if (HOP(@refs, m) && @refs[m].nil?)
-          continue
+          next
         end
 
         # # I got "do" once. :-/
         if (!is_identifier(m))
-          continue
+          next
         end
 
         return m
@@ -118,7 +118,8 @@ module Scope
     end
     def define(name=nil)
       if !name.nil?
-        return @names[name] = name
+        @names.push(name)
+        return name
       end
     end
 
@@ -139,7 +140,7 @@ module Scope
   class ScopedArray < Array
 
     attr_accessor :scope
-    
+
   end
 
   class AddScope
@@ -181,14 +182,14 @@ module Scope
                 ast[0],
                 MAP(t, @walk),
                 [ define.call(c[0]), MAP(c[1], @walk) ],
-                f != null ? MAP(f, @walk) : null
+                f ? MAP(f, @walk) : nil
               ]
             end
             nil
           end,
           "name" => lambda do |ast, name|
             if (name == "eval")
-              puts "eval"+@current_scope.class.to_s
+              #puts "eval"+@current_scope.class.to_s
               @having_eval.push(@current_scope)
             end
             reference(name)
@@ -205,7 +206,7 @@ module Scope
         # scopes where eval was detected and their parents
         # are marked with uses_eval, unless they define the
         # "eval" name.
-        puts "having #{@having_eval.inspect} "
+        #puts "having #{@having_eval.inspect} "
         MAP(@having_eval, lambda do |scope, *args|
           if (!(scope.has("eval")))
             while (scope)
@@ -272,13 +273,14 @@ module Scope
       lambda do |ast, name, args, *body|
         body = body[0]
         is_defun = ast[0] == "defun"
-        return [ ast[0], is_defun ? define.call(name) : name, args, with_new_scope(lambda do
+        ret = [ ast[0], is_defun ? define.call(name) : name, args, with_new_scope(lambda do
           if (!is_defun)
             define.call(name)
           end
           MAP(args, define)
           return MAP(body, @walk)
         end)]
+        return ret
       end
     end
 

@@ -4,7 +4,7 @@ require 'test/unit'
 require 'uglifyjs'
 
 class UglifyjsTest < Test::Unit::TestCase
-  FIXTURES_DIR = File.join(File.dirname(__FILE__), 'fixtures', 'json2.js')
+  FIXTURES_DIR = File.join(File.dirname(__FILE__), 'fixtures', 'jquery.js')
   NODE_TESTS = File.join(File.dirname(__FILE__), 'node', 'test.js')
 
   def test_all_js
@@ -22,6 +22,7 @@ class UglifyjsTest < Test::Unit::TestCase
   def file_test(filename)
     js = File.open(filename, 'rb') { |f| f.read }
     # node
+    parse_node = ''
     parse_node = `#{NODE_TESTS} #{filename}`
     puts parse_node
     nodeFile = File.new("output_node.jstest", "w")

@@ -31,6 +31,7 @@ require 'parsejs'
 # require 'uglifyjs/ast_squeeze'
 require 'uglifyjs/util'
 require 'uglifyjs/ast_mangle'
+require 'uglifyjs/ast_squeeze'
 require 'uglifyjs/gen_code'
 
 module Uglifyjs
@@ -53,11 +54,12 @@ module Uglifyjs
     end
 
     def squeeze
+      @ast = Squeeze.new(@ast).go
     end
 
     def gen_code
       mangle
-      puts @ast.inspect
+      #puts "MANGLED AST: #{@ast.inspect}"
       GenCode::Generator.new(@ast).go
     end
 
