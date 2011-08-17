@@ -54,11 +54,12 @@ module Uglifyjs
     end
 
     def squeeze
-      @ast = Squeeze.new(@ast).go
+      @ast = Squeeze::Squeeze.new(@ast).go
     end
 
     def gen_code
       mangle
+      squeeze
       #puts "MANGLED AST: #{@ast.inspect}"
       GenCode::Generator.new(@ast).go
     end
