@@ -4,7 +4,7 @@ require 'test/unit'
 require 'uglifyjs'
 
 class UglifyjsTest < Test::Unit::TestCase
-  FIXTURES_DIR = File.join(File.dirname(__FILE__), 'fixtures', 'simple.js')
+  FIXTURES_DIR = File.join(File.dirname(__FILE__), 'fixtures', 'json2.js')
   NODE_TESTS = File.join(File.dirname(__FILE__), 'node', 'test.js')
 
   def test_all_js
@@ -31,7 +31,7 @@ class UglifyjsTest < Test::Unit::TestCase
 
     # ruby
     parse_rb = Parsejs::Parse.new(js).parse
-    #puts parse_rb.inspect
+    # puts parse_rb.inspect
     genned_js = Uglifyjs::AST.new(parse_rb).gen_code + "\n"
     puts genned_js
     aFile = File.new("output_rb.jstest", "w")
@@ -40,7 +40,7 @@ class UglifyjsTest < Test::Unit::TestCase
 
     if parse_node!=parse_rb
       #puts `diff output_node.jstest output_rb.jstest`
-      puts `diffmerge output_node.jstest output_rb.jstest`
+      # puts `diffmerge output_node.jstest output_rb.jstest`
     end
     assert (parse_node==genned_js), "#{filename} failed"
   end

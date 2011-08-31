@@ -9,9 +9,8 @@ module Util
      args = {}
    end
    for i in defs
-     if (HOP(defs, i))
-       ret[i] = (args && HOP(args, i)) ? args[i] : defs[i]
-     end
+     puts i
+     ret[i] = (args && HOP(args, i)) ? args[i] : defs[i]
    end
    return ret
   end

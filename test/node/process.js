@@ -772,6 +772,7 @@ function prepare_ifs(ast) {
 
                 for (var i = 0; i < statements.length; ++i) {
                         var fi = statements[i];
+                  console.log('redo_if', i, JSON.stringify(fi))
                         if (fi[0] != "if") continue;
 
                         if (fi[3] && walk(fi[3])) continue;
@@ -793,14 +794,20 @@ function prepare_ifs(ast) {
                                 e               // else
                         ] ]);
 
-                        return redo_if(ret);
+                          console.log("RET:", ret);
+                          end = redo_if(ret)
+                          console.log("RETEND:", end);
+                        return end;
                 }
 
+                console.log('REDO_IF END:',JSON.stringify(statements));
                 return statements;
         };
 
         function redo_if_lambda(name, args, body) {
+                console.log("BODY1:", body);
                 body = redo_if(body);
+                console.log("BODY2:", body);
                 return [ this[0], name, args.slice(), body ];
         };
 
@@ -1080,8 +1087,10 @@ function ast_squeeze(ast, options) {
         };
 
         ast = prepare_ifs(ast);
+        console.log('JS Versions Prepared IFs', JSON.stringify(ast))
         ast = ast_add_scope(ast);
 
+        // console.log("JS Squeeze is a GO with ast:",JSON.stringify(ast));
         return w.with_walkers({
                 "sub": function(expr, subscript) {
                         if (subscript[0] == "string") {

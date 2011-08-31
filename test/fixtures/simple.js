@@ -1,4 +1,5 @@
 var a=1;
+var b=2;
 (function hello() {
   'hello';
   "ku\npk";
@@ -12,9 +13,18 @@ var a=1;
   function mellow() {
 
   }
+  function f(n) {
+    if (thing) {
+            return str('', {'': value});
+    }
+  }
+    if (thing) {
+        return
+    }
   var nbsp = "\xA0";
   var bob = new jQuery.fn.init();
   for (var i=0;i<100;i++) {}
+  if (a==1) dothing();
   var a = new String('hi');
   var msg = 'hello';
   var num = 1234;

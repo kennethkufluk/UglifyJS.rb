@@ -81,9 +81,10 @@ class ASTWalker
     end
   end
   def _block
-    lambda do |ast, statements|
+    lambda do |ast, *statementsarr|
+      statements = statementsarr[0]
       out = [ ast[0] ]
-      if !statements.nil?
+      if !statements.nil? && statements.length > 0
         out.push(MAP(statements, walk))
       end
       return out

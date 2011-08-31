@@ -26,22 +26,12 @@
 
 require 'parsejs'
 
-# require 'uglifyjs/ast_walker'
-# require 'uglifyjs/scope'
-# require 'uglifyjs/ast_squeeze'
 require 'uglifyjs/util'
 require 'uglifyjs/ast_mangle'
 require 'uglifyjs/ast_squeeze'
 require 'uglifyjs/gen_code'
 
 module Uglifyjs
-
-  include Util
-  # include ASTWalker
-  # include Scope
-  # include ASTMangle
-  # include ASTSqueeze
-  include GenCode
 
   class AST
 
@@ -59,8 +49,9 @@ module Uglifyjs
 
     def gen_code
       mangle
+      puts "MANGLED AST: #{@ast.inspect}"
       squeeze
-      #puts "MANGLED AST: #{@ast.inspect}"
+      puts "SQUEEZED AST: #{@ast.inspect}"
       GenCode::Generator.new(@ast).go
     end
 
@@ -68,25 +59,3 @@ module Uglifyjs
 
   end
 end
-
-#var jsp = require("./parse-js"),
-#    slice = jsp.slice,
-#    member = jsp.member,
-#    PRECEDENCE = jsp.PRECEDENCE,
-#    OPERATORS = jsp.OPERATORS;
-#
-#
-## /* -----[ Exports ]----- */
-#
-#exports.ast_walker = ast_walker;
-#exports.ast_mangle = ast_mangle;
-#exports.ast_squeeze = ast_squeeze;
-#exports.gen_code = gen_code;
-#exports.ast_add_scope = ast_add_scope;
-#exports.set_logger = function(logger) { warn = logger };
-#exports.make_string = make_string;
-#exports.split_lines = split_lines;
-#exports.MAP = MAP;
-#
-## # keep this last!
-#exports.ast_squeeze_more = require("./squeeze-more").ast_squeeze_more;

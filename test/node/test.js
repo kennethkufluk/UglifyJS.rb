@@ -5,5 +5,6 @@ var js = fs.readFileSync(process.argv[2], 'utf-8');
 var ast = new parser.parse(js);
 var pro = require('./process.js');
 var ast = pro.ast_mangle(ast);
-//console.log("MANGLED AST: ",(JSON.stringify(ast)));
+var ast = pro.ast_squeeze(ast);
+console.log("SQUEEZED AST: ",(JSON.stringify(ast)));
 console.log(pro.gen_code(ast));

@@ -1,1 +1,5 @@
-var a = b % d;
+  function f(n) {
+    if (thing) {
+            return str('', {'': value});
+    }
+  }

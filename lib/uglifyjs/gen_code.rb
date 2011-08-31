@@ -587,7 +587,7 @@ module GenCode
       end).join(@newline) + @newline + indent.call("}")
     end
 
-    def make_block(statements)
+    def make_block(statements=nil, *args)
       return ";" if (!statements)
       return "{}" if (statements.length == 0)
       return "{" + @newline + with_indent(lambda do
@@ -614,6 +614,7 @@ module GenCode
         #if (!gen)
         #  throw new Error("Can't find generator for \"" + type + "\"")
         @stack.push(node)
+        # puts "TYPE: #{type}"
         ret = self.send(("generate_"+type.gsub(/-/, '_')).to_sym, *(node.slice(1..-1)))
         @stack.pop()
         return ret
