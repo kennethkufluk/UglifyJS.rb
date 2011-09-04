@@ -21,7 +21,6 @@ var b=2;
     if (thing) {
         return
     }
-  var nbsp = "\xA0";
   var bob = new jQuery.fn.init();
   for (var i=0;i<100;i++) {}
   if (a==1) dothing();

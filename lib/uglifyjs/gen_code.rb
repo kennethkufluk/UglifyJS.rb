@@ -3,22 +3,20 @@
 require 'parsejs/util'
 require 'uglifyjs/ast_walker'
 
-module GenCode
-
-  DOT_CALL_NO_PARENS = [
-    "name",
-    "array",
-    "object",
-    "string",
-    "dot",
-    "sub",
-    "call",
-    "regexp"
-  ]
-
-  class Generator
+class ASTCodeGenerator
 
     include Util
+
+    DOT_CALL_NO_PARENS = [
+      "name",
+      "array",
+      "object",
+      "string",
+      "dot",
+      "sub",
+      "call",
+      "regexp"
+    ]
 
     def initialize(ast, options = {})
       @ast = ast
@@ -40,11 +38,11 @@ module GenCode
 
     end
 
-    def go
+    def generate
       return make.call(@ast)
     end
 
-
+    protected
 
     def make_string(str, ascii_only)
       dq = 0
@@ -621,17 +619,15 @@ module GenCode
       end
     end
 
-  end
+    # /* -----[ Utilities ]----- */
 
+    def repeat_string(str, i)
+      return "" if (i <= 0)
+      return str if (i == 1)
+      d = repeat_string(str, i >> 1)
+      d += d
+      d += str if (i & 1)
+      return d
+    end
 
-  # /* -----[ Utilities ]----- */
-
-  def repeat_string(str, i)
-    return "" if (i <= 0)
-    return str if (i == 1)
-    d = repeat_string(str, i >> 1)
-    d += d
-    d += str if (i & 1)
-    return d
-  end
 end

@@ -4,20 +4,20 @@
 require "uglifyjs/ast_walker"
 require "uglifyjs/scope"
 
-class Mangle
+class Mangler
 
   include Scope
   include Util
 
   def initialize(ast, options=nil)
-    @w = ASTWalker.new(ast)
-    @walk = @w.walk
     @ast = ast
+    @w = ASTWalker.new(@ast)
+    @walk = @w.walk
     @options = options || {}
     @scope = nil
   end
 
-  def go
+  def getAST
     return @w.with_walkers({
       "function" => _lambda,
       "defun" => lambda do |ast, *args|
@@ -51,6 +51,8 @@ class Mangle
       return @walk.call(ast_with_scope)
     end)
   end
+
+  protected
 
   def get_mangled(name, newMangle=nil)
     if (!@options[:toplevel] && !@scope.parent)

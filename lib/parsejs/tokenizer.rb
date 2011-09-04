@@ -248,7 +248,7 @@ module Tokenizer
         when "x"
           hex_bytes(2).chr
         when "u"
-          hex_bytes(4).chr
+          "x" #kpk fixme! hex_bytes(4).chr
         when "\n"
           ""
         else

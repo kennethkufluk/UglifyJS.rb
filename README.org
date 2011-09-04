@@ -1,0 +1,54 @@
+#+TITLE: UglifyJS.rb -- a JavaScript parser/compressor/beautifier in Ruby
+
+* UglifyJS.rb --- a JavaScript parser/compressor/beautifier in Ruby
+
+This is a Ruby port of the outstanding [[https://github.com/mishoo/UglifyJS][UglifyJS]] project by Mihai Bazon.
+See that project on Github for full details.
+
+The Ruby version of Uglify has several distinct advantages over the native JavaScript (Node) implementation:
+
+- It is written in Ruby, which is great if you like that kind of thing.
+- It is around 100x slower, leaving you time to make a cup of tea, coffee, or even go out to lunch.
+- It is less well tested, giving you the chance to find and fix bugs yourself.
+- It is not kept up to date, meaning there won't be any scary feature enhancements on the way.
+
+The Ruby port has some testing scripts, which simply compare the output from minifying a few scripts with the node equivalent.
+
+
+** License
+
+UglifyJS.rb is released under the BSD license:
+
+#+BEGIN_EXAMPLE
+Copyright 2011 (c) Kenneth Kufluk <kenneth@kufluk.com>
+
+Based on UglifyJS (https://github.com/mishoo/UglifyJS).
+Copyright 2010 (c) Mihai Bazon <mihai.bazon@gmail.com>
+Based on parse-js (http://marijn.haverbeke.nl/parse-js/).
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+    * Redistributions of source code must retain the above
+      copyright notice, this list of conditions and the following
+      disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials
+      provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER “AS IS” AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+#+END_EXAMPLE

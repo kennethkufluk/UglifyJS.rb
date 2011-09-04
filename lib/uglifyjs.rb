@@ -10,16 +10,51 @@
 
   Exported functions:
 
-    - ast_mangle(ast, options) -- mangles the variable/def names
-      in the AST.  Returns an AST.
+    - mangle -- mangles the variable/def names
+      in the AST.
 
-    - ast_squeeze(ast) -- employs various optimizations to make the
-      final generated code even smaller.  Returns an AST.
+    - squeeze -- employs various optimizations to make the
+      final generated code even smaller.
 
-    - gen_code(ast, options) -- generates JS code from the AST.  Pass
+    - gen_code -- generates JS code from the AST.  Pass
       true (or an object, see the code for some options) as second
       argument to get "pretty" (indented) code.
 
+ ***********************************************************************/
+
+  Distributed under the BSD license:
+
+    UglifyJS.rb and the libraries within
+    Copyright 2011 (c) Kenneth Kufluk <kenneth@kufluk.com>
+
+    Based on UglifyJS,
+    Copyright 2010 (c) Mihai Bazon <mihai.bazon@gmail.com>
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+        * Redistributions of source code must retain the above
+          copyright notice, this list of conditions and the following
+          disclaimer.
+
+        * Redistributions in binary form must reproduce the above
+          copyright notice, this list of conditions and the following
+          disclaimer in the documentation and/or other materials
+          provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER “AS IS” AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE
+    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+    OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+    THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGE.
 
  ***********************************************************************/
 =end
@@ -40,22 +75,20 @@ module Uglifyjs
     end
 
     def mangle
-      @ast = Mangle.new(@ast).go
+      @ast = Mangler.new(@ast).getAST
+      # puts "MANGLED AST: #{@ast.inspect}"
+      self
     end
 
     def squeeze
-      @ast = Squeeze::Squeeze.new(@ast).go
+      @ast = Squeezer.new(@ast).getAST
+      # puts "SQUEEZED AST: #{@ast.inspect}"
+      self
     end
 
     def gen_code
-      mangle
-      puts "MANGLED AST: #{@ast.inspect}"
-      squeeze
-      puts "SQUEEZED AST: #{@ast.inspect}"
-      GenCode::Generator.new(@ast).go
+      ASTCodeGenerator.new(@ast).generate
     end
-
-    protected
 
   end
 end

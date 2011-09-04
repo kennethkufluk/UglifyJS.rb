@@ -772,7 +772,6 @@ function prepare_ifs(ast) {
 
                 for (var i = 0; i < statements.length; ++i) {
                         var fi = statements[i];
-                  console.log('redo_if', i, JSON.stringify(fi))
                         if (fi[0] != "if") continue;
 
                         if (fi[3] && walk(fi[3])) continue;
@@ -782,32 +781,31 @@ function prepare_ifs(ast) {
 
                         var conditional = walk(fi[1]);
 
+                        // console.log('ELSES:',statements)
                         var e_body = statements.slice(i + 1);
+                        // console.log('ELSEB:',e_body)
                         var e;
                         if (e_body.length == 1) e = e_body[0];
                         else e = [ "block", e_body ];
 
+                        // console.log('ELSE:',e)
                         var ret = statements.slice(0, i).concat([ [
                                 fi[0],          // "if"
                                 conditional,    // conditional
                                 t,              // then
                                 e               // else
                         ] ]);
-
-                          console.log("RET:", ret);
-                          end = redo_if(ret)
-                          console.log("RETEND:", end);
-                        return end;
+                        var bob =redo_if(ret);
+                        // console.log('RETEND',bob)
+                        return bob;
                 }
 
-                console.log('REDO_IF END:',JSON.stringify(statements));
+                // console.log('statements',statements)
                 return statements;
         };
 
         function redo_if_lambda(name, args, body) {
-                console.log("BODY1:", body);
                 body = redo_if(body);
-                console.log("BODY2:", body);
                 return [ this[0], name, args.slice(), body ];
         };
 
@@ -903,6 +901,7 @@ function ast_squeeze(ast, options) {
         function _lambda(name, args, body) {
                 var is_defun = this[0] == "defun";
                 body = with_scope(body.scope, function(){
+                  // console.log('JS_LAMBDA',JSON.stringify(body));
                         var ret = tighten(MAP(body, walk), "lambda");
                         if (!is_defun && name && !HOP(scope.refs, name))
                                 name = null;
@@ -919,18 +918,27 @@ function ast_squeeze(ast, options) {
         // 4. transform consecutive statements using the comma operator
         // 5. if block_type == "lambda" and it detects constructs like if(foo) return ... - rewrite like if (!foo) { ... }
         function tighten(statements, block_type) {
+
+                // console.log('JS squeeze start length', statements.length, JSON.stringify(statements));
+
                 statements = statements.reduce(function(a, stat){
+                        // console.log('JS squeezing blocks');
                         if (stat[0] == "block") {
                                 if (stat[1]) {
-                                        a.push.apply(a, stat[1]);
+                                  // console.log('+', JSON.stringify(stat[1]), stat[1].length);
+                                        a = a.concat(stat[1]);
                                 }
                         } else {
+                                  // console.log('++', JSON.stringify(stat), stat.length);
                                 a.push(stat);
                         }
                         return a;
                 }, []);
 
+                // console.log('JS squeeze blocks length', statements.length);
+
                 statements = (function(a, prev){
+                        // console.log('JS squeezing vars');
                         statements.forEach(function(cur){
                                 if (prev && ((cur[0] == "var" && prev[0] == "var") ||
                                              (cur[0] == "const" && prev[0] == "const"))) {
@@ -943,7 +951,10 @@ function ast_squeeze(ast, options) {
                         return a;
                 })([]);
 
+                // console.log('JS squeeze vars length', statements.length);
+
                 if (options.dead_code) statements = (function(a, has_quit){
+                        // console.log('JS squeezing deadcode');
                         statements.forEach(function(st){
                                 if (has_quit) {
                                         if (member(st[0], [ "function", "defun" , "var", "const" ])) {
@@ -961,7 +972,10 @@ function ast_squeeze(ast, options) {
                         return a;
                 })([]);
 
+                // console.log('JS squeeze deadcode length', statements.length);
+
                 if (options.make_seqs) statements = (function(a, prev) {
+                        // console.log('JS squeezing seqs');
                         statements.forEach(function(cur){
                                 if (prev && prev[0] == "stat" && cur[0] == "stat") {
                                         prev[1] = [ "seq", prev[1], cur[1] ];
@@ -973,7 +987,10 @@ function ast_squeeze(ast, options) {
                         return a;
                 })([]);
 
+                // console.log('JS squeeze seqs length', statements.length);
+
                 if (block_type == "lambda") statements = (function(i, a, stat){
+                        // console.log('JS squeezing lambdas');
                         while (i < statements.length) {
                                 stat = statements[i++];
                                 if (stat[0] == "if" && !stat[3]) {
@@ -991,6 +1008,8 @@ function ast_squeeze(ast, options) {
                         }
                         return a;
                 })(0, []);
+
+                // console.log('JS squeeze lambda length', statements.length);
 
                 return statements;
         };
@@ -1087,7 +1106,7 @@ function ast_squeeze(ast, options) {
         };
 
         ast = prepare_ifs(ast);
-        console.log('JS Versions Prepared IFs', JSON.stringify(ast))
+        // console.log('JS Versions Prepared IFs', JSON.stringify(ast))
         ast = ast_add_scope(ast);
 
         // console.log("JS Squeeze is a GO with ast:",JSON.stringify(ast));

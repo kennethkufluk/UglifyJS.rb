@@ -7,7 +7,7 @@
   This file contains the tokenizer/parser.  It is a port to Ruby
   of Uglify-JS [2] which is a JavaScript port
   of parse-js [1], a JavaScript parser library written in Common Lisp
-  by Marijn Haverbeke.  Thank you Marijn!
+  by Marijn Haverbeke.  Thank you Marijn!  Thank you Mihai!
 
   [1] http://marijn.haverbeke.nl/parse-js/
   [2] https://github.com/mishoo/UglifyJS
@@ -19,6 +19,41 @@
 
     - parse(code) -- returns an AST of the given JavaScript code.
 
+  Distributed under the BSD license:
+
+    Copyright 2011 (c) Kenneth Kufluk <kenneth@kufluk.com>
+    Based on parse-js.js (https://github.com/mishoo/UglifyJS).
+
+    parse-js.js Copyright 2010 (c) Mihai Bazon <mihai.bazon@gmail.com>
+    Based on parse-js (http://marijn.haverbeke.nl/parse-js/).
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+        * Redistributions of source code must retain the above
+          copyright notice, this list of conditions and the following
+          disclaimer.
+
+        * Redistributions in binary form must reproduce the above
+          copyright notice, this list of conditions and the following
+          disclaimer in the documentation and/or other materials
+          provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER “AS IS” AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE
+    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+    OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+    THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGE.
+
+ ***********************************************************************/
 
 =end
 
