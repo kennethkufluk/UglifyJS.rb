@@ -1,7 +1,5 @@
 #+TITLE: UglifyJS.rb -- a JavaScript parser/compressor/beautifier in Ruby
 
-* UglifyJS.rb --- a JavaScript parser/compressor/beautifier in Ruby
-
 This is a Ruby port of the outstanding [[https://github.com/mishoo/UglifyJS][UglifyJS]] project by Mihai Bazon.
 See that project on Github for full details.
 
